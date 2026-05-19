@@ -15,12 +15,9 @@
 #include <stdio.h>
 #include <time.h>
 
-
-
 #define TITLE "Conway's Game of Life"
 #define WIDTH 1000
 #define HEIGHT 1000
-
 #define GRID_HEIGHT 1000
 #define GRID_WIDTH 1000
 #define DELAY 8
@@ -28,10 +25,8 @@
 Uint32 INIT_FLAGS = SDL_INIT_VIDEO;
 Uint32 WINDOW_FLAGS = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALWAYS_ON_TOP;
 
-
 int currentheight = WIDTH;
 int currentwidth = HEIGHT;
-
 int r = 255;
 int g = 255;
 int b = 255;
@@ -41,7 +36,6 @@ typedef struct {
   bool weiss;
   int lebendeNachbarn;
 } punkt;
-
 
 void Draw(SDL_Renderer *renderer, punkt *grid) {
 
@@ -61,7 +55,6 @@ void Draw(SDL_Renderer *renderer, punkt *grid) {
   SDL_RenderPresent(renderer);
   SDL_Delay(DELAY);
 }
-
 
 void Redraw(SDL_Window *window, punkt* grid) {
   
