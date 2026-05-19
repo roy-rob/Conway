@@ -15,8 +15,6 @@
 #include <stdio.h>
 #include <time.h>
 
-#include <GL/gl.h>
-
 
 
 #define TITLE "Conway's Game of Life"
