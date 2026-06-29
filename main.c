@@ -18,24 +18,48 @@
 #define TITLE "Conway's Game of Life"
 #define WIDTH 1000
 #define HEIGHT 1000
-#define GRID_HEIGHT 1000
-#define GRID_WIDTH 1000
-#define DELAY 8
+#define GRID_HEIGHT 250
+#define GRID_WIDTH 250
+#define DELAY 80
 
 Uint32 INIT_FLAGS = SDL_INIT_VIDEO;
 Uint32 WINDOW_FLAGS = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALWAYS_ON_TOP;
 
 int currentheight = WIDTH;
 int currentwidth = HEIGHT;
-int r = 255;
-int g = 255;
-int b = 255;
+int weissrate = 5;
+Uint8 r = 255;
+Uint8 g = 255;
+Uint8 b = 255;
 
 typedef struct {
   SDL_FRect rect;
   bool weiss;
   int lebendeNachbarn;
 } punkt;
+
+
+void gridErzeugen(punkt *grid) {
+
+  int punktbreite = currentwidth / GRID_WIDTH;
+  int punkthohe = currentheight / GRID_HEIGHT;
+  
+  for (int i = 0; i < GRID_HEIGHT; i++) {
+    for (int j = 0; j < GRID_WIDTH; j++) {
+      punkt *elem = &grid[i * GRID_WIDTH + j];
+      int aktuellx = 0 + (j * punktbreite);
+      int aktuelly = 0 + (i * punkthohe);
+      
+      elem->rect.x = (float)aktuellx;
+      elem->rect.w = (float)punktbreite;
+      elem->rect.y = (float)aktuelly;
+      elem->rect.h = (float)punkthohe;
+      
+      elem->weiss = false;
+      if (rand() % weissrate == 0) {elem->weiss = true;}
+    }
+  } 
+}
 
 void Draw(SDL_Renderer *renderer, punkt *grid) {
 
@@ -56,6 +80,7 @@ void Draw(SDL_Renderer *renderer, punkt *grid) {
   SDL_Delay(DELAY);
 }
 
+
 void Redraw(SDL_Window *window, punkt* grid) {
   
   SDL_GetWindowSize(window, &currentheight, &currentwidth);
@@ -68,10 +93,10 @@ void Redraw(SDL_Window *window, punkt* grid) {
       int aktuellx = 0 + (j * punktbreite);
       int aktuelly = 0 + (i * punkthohe);
       
-      elem->rect.x = aktuellx;
-      elem->rect.w = punktbreite;
-      elem->rect.y = aktuelly;
-      elem->rect.h = punkthohe;
+      elem->rect.x = (float)aktuellx;
+      elem->rect.w = (float)punktbreite;
+      elem->rect.y = (float)aktuelly;
+      elem->rect.h = (float)punkthohe;
     }
   }
 }
@@ -120,9 +145,9 @@ void Spielen(punkt *grid) {
   }
 }
 
-int main(int argc, char **argv) {
+int main() {
 
-  srand(time(0));
+  srand((unsigned)time(0));
   
   SDL_Init(INIT_FLAGS);  
   SDL_Window *window;
@@ -134,34 +159,20 @@ int main(int argc, char **argv) {
   bool quit = false;  
   punkt *grid = malloc(sizeof(punkt) * GRID_HEIGHT * GRID_WIDTH);
 
-  int punktbreite = currentwidth / GRID_WIDTH;
-  int punkthohe = currentheight / GRID_HEIGHT;
-
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
   SDL_RenderClear(renderer);
-  
-  for (int i = 0; i < GRID_HEIGHT; i++) {
-    for (int j = 0; j < GRID_WIDTH; j++) {
-      punkt *elem = &grid[i * GRID_WIDTH + j];
-      int aktuellx = 0 + (j * punktbreite);
-      int aktuelly = 0 + (i * punkthohe);
-      
-      elem->rect.x = aktuellx;
-      elem->rect.w = punktbreite;
-      elem->rect.y = aktuelly;
-      elem->rect.h = punkthohe;
-      
-      elem->weiss = false;
-      if (rand() % 5 == 0) {elem->weiss = true;}
-    }
-  }
+
+  gridErzeugen(grid);
   
   while (!quit) {    
     while (SDL_PollEvent(&event)) {
       if (event.type == SDL_EVENT_KEY_DOWN) {
 	if (event.key.key == SDLK_ESCAPE) {
 	  quit = true;
-	}
+        }
+        if (event.key.key == SDLK_R) {
+	  gridErzeugen(grid);
+	}          
       }      
       if (event.type == SDL_EVENT_QUIT) {
 	quit = true;
