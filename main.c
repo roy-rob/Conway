@@ -1,12 +1,3 @@
-#include <SDL3/SDL_error.h>
-#include <SDL3/SDL_events.h>
-#include <SDL3/SDL_init.h>
-#include <SDL3/SDL_keycode.h>
-#include <SDL3/SDL_mouse.h>
-#include <SDL3/SDL_oldnames.h>
-#include <SDL3/SDL_rect.h>
-#include <SDL3/SDL_render.h>
-#include <SDL3/SDL_video.h>
 #include <SDL3/SDL.h>
 
 #include <stdbool.h>
@@ -18,9 +9,16 @@
 #define TITLE "Conway's Game of Life"
 #define WIDTH 1000
 #define HEIGHT 1000
-#define GRID_HEIGHT 250
-#define GRID_WIDTH 250
-#define DELAY 80
+#define GRID_HEIGHT 10000
+#define GRID_WIDTH 10000
+#define DELAY 0
+
+//Gr��e des Kamerafeldes
+int CAMERA_GRID_X = 500;
+int CAMERA_GRID_Y = 500;
+
+int CAMERA_COORD_X = GRID_WIDTH / 2;
+int CAMERA_COORD_Y = GRID_HEIGHT / 2;
 
 Uint32 INIT_FLAGS = SDL_INIT_VIDEO;
 Uint32 WINDOW_FLAGS = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALWAYS_ON_TOP;
@@ -33,28 +31,15 @@ Uint8 g = 255;
 Uint8 b = 255;
 
 typedef struct {
-  SDL_FRect rect;
   bool weiss;
   int lebendeNachbarn;
 } punkt;
 
 
 void gridErzeugen(punkt *grid) {
-
-  int punktbreite = currentwidth / GRID_WIDTH;
-  int punkthohe = currentheight / GRID_HEIGHT;
-  
   for (int i = 0; i < GRID_HEIGHT; i++) {
     for (int j = 0; j < GRID_WIDTH; j++) {
       punkt *elem = &grid[i * GRID_WIDTH + j];
-      int aktuellx = 0 + (j * punktbreite);
-      int aktuelly = 0 + (i * punkthohe);
-      
-      elem->rect.x = (float)aktuellx;
-      elem->rect.w = (float)punktbreite;
-      elem->rect.y = (float)aktuelly;
-      elem->rect.h = (float)punkthohe;
-      
       elem->weiss = false;
       if (rand() % weissrate == 0) {elem->weiss = true;}
     }
@@ -66,13 +51,31 @@ void Draw(SDL_Renderer *renderer, punkt *grid) {
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
   SDL_RenderClear(renderer);  
   SDL_SetRenderDrawColor(renderer, r, g, b, 255);
-  
-  for (int i = 0; i < GRID_HEIGHT; i++) {
-    for (int j = 0; j < GRID_WIDTH; j++) {
+
+  int anfang_x = CAMERA_COORD_X - (CAMERA_GRID_X / 2);
+  int ende_x = CAMERA_COORD_X + (CAMERA_GRID_X / 2);
+  int anfang_y = CAMERA_COORD_Y - (CAMERA_GRID_Y / 2);
+  int ende_y = CAMERA_COORD_Y + (CAMERA_GRID_Y / 2);
+
+  int punktbreite = currentwidth / CAMERA_GRID_X;
+  int punkthohe = currentheight / CAMERA_GRID_Y;
+
+  for (int i = anfang_y; i < ende_y; i++) {
+    int aktuelly = (i - anfang_y) * punkthohe;
+
+    for (int j = anfang_x; j < ende_x; j++) {
       punkt *elem = &grid[i * GRID_WIDTH + j];
       
+      int aktuellx = (j - anfang_x) * punktbreite;
+    
+      SDL_FRect rect;
+      rect.x = (float)aktuellx;
+      rect.w = (float)punktbreite;
+      rect.y = (float)aktuelly;
+      rect.h = (float)punkthohe;
+      
       if (elem->weiss) {
-       	SDL_RenderFillRect(renderer, &elem->rect);        
+       	SDL_RenderFillRect(renderer, &rect);        
       }
     }  
   }
@@ -81,28 +84,9 @@ void Draw(SDL_Renderer *renderer, punkt *grid) {
 }
 
 
-void Redraw(SDL_Window *window, punkt* grid) {
-  
-  SDL_GetWindowSize(window, &currentheight, &currentwidth);
-  int punktbreite = currentwidth / GRID_WIDTH;
-  int punkthohe = currentheight / GRID_HEIGHT;
-  
-  for (int i = 0; i < GRID_HEIGHT; i++) {
-    for (int j = 0; j < GRID_WIDTH; j++) {
-      punkt *elem = &grid[i * GRID_WIDTH + j];
-      int aktuellx = 0 + (j * punktbreite);
-      int aktuelly = 0 + (i * punkthohe);
-      
-      elem->rect.x = (float)aktuellx;
-      elem->rect.w = (float)punktbreite;
-      elem->rect.y = (float)aktuelly;
-      elem->rect.h = (float)punkthohe;
-    }
-  }
-}
-
 void lebendeNachbarnZaehlen(punkt *grid) {
 
+#pragma omp parallel for schedule(static)
   for (int i = 0; i < GRID_HEIGHT; i++) {
     for (int j = 0; j < GRID_WIDTH; j++) {
 
@@ -120,11 +104,15 @@ void lebendeNachbarnZaehlen(punkt *grid) {
       }        
       elem->lebendeNachbarn = lebendeNachbarn;
     }
-  }    
-}  
+  }
+}
+
+
+
 
 void Spielen(punkt *grid) {
-  
+
+#pragma omp parallel for schedule(static)
   for (int i = 0; i < GRID_HEIGHT; i++) {
     for (int j = 0; j < GRID_WIDTH; j++) {
 
@@ -163,27 +151,40 @@ int main() {
   SDL_RenderClear(renderer);
 
   gridErzeugen(grid);
-  
-  while (!quit) {    
+
+
+  while (!quit) {
     while (SDL_PollEvent(&event)) {
       if (event.type == SDL_EVENT_KEY_DOWN) {
-	if (event.key.key == SDLK_ESCAPE) {
+        switch (event.key.key) {
+        case SDLK_ESCAPE:
+          quit = true;
+          break;
+        case SDLK_W:
+          CAMERA_COORD_Y -= 5;
+          break;
+        case SDLK_S:
+          CAMERA_COORD_Y += 5;
+          break;
+        case SDLK_A:
+          CAMERA_COORD_X -= 5;
+          break;          
+        case SDLK_D:
+          CAMERA_COORD_X += 5;
+          break;
+        case SDLK_R:
+          gridErzeugen(grid);
+          break;	           
+	}      
+	if (event.type == SDL_EVENT_QUIT) {
 	  quit = true;
-        }
-        if (event.key.key == SDLK_R) {
-	  gridErzeugen(grid);
-	}          
-      }      
-      if (event.type == SDL_EVENT_QUIT) {
-	quit = true;
-      }        
-      if (event.type == SDL_EVENT_WINDOW_RESIZED) {
-	Redraw(window, grid);	
-      }      
+	}        
+      }
     }
-    Draw(renderer, grid);
-    lebendeNachbarnZaehlen(grid);  
-    Spielen(grid);
+      Draw(renderer, grid);
+      lebendeNachbarnZaehlen(grid);  
+      Spielen(grid);
+    
   }
   
   free(grid);
