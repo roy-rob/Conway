@@ -20,7 +20,7 @@
 #define GRID_WIDTH 1000
 
 //Nummer der pthreads
-#define NUM_THREADS 12
+#define NUM_THREADS 8
 
 //SDL-FLAGS
 Uint32 INIT_FLAGS = SDL_INIT_VIDEO;
@@ -195,10 +195,12 @@ void *play(void *arg) {
 
       punkt *elem = &data->grid[i * GRID_WIDTH + j];
 
-      //Boolean "weiss" gleich dem Resultat der dahinterliegenden Bedingung setzen
+      //Boolean "weiss" gleich dem Resultat der dahinterliegenden Bedingung setzen. Regeln von Conway's Game of Life
       if (elem->weiss) {
+	//Hat eine lebende Zelle zwei oder drei Nachbarn, lebt sie im n�chsten Zyklus
 	elem->weiss = (elem->lebendeNachbarn == 2 || elem->lebendeNachbarn == 3);
       } else {
+	//Hat eine tote Zelle drei lebende Nachbarn, lebt sie im n�chsten Zyklus        
 	elem->weiss = (elem->lebendeNachbarn == 3);
       }
     }
