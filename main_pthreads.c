@@ -16,8 +16,8 @@
 #define TITLE "Conway's Game of Life"
 #define WIDTH 1000
 #define HEIGHT 1000
-#define GRID_HEIGHT 1000
-#define GRID_WIDTH 1000
+#define GRID_HEIGHT 4000
+#define GRID_WIDTH 4000
 
 //Nummer der pthreads
 #define NUM_THREADS 8
